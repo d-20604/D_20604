@@ -1,7 +1,5 @@
-   requirements.txt
-   streamlit
-   pandas
 streamlit
 requests
 pandas
 pytz
+
