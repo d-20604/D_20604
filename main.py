@@ -90,3 +90,21 @@ with tab2:
     
     # 그래프 하단 설명 문구 자리
     st.caption("💡 이 그래프로 알 수 있는 것: 시간이 흐름에 따른 관객수의 전체적인 누적 성장 곡선과 주요 관객 수 돌파 시점을 파악할 수 있습니다.")
+    import matplotlib.pyplot as plt
+
+# 예시 데이터 (선택한 영화의 일별 누적 관객 수)
+dates = ['1일차', '2일차', '3일차', '4일차', '5일차', '6일차', '7일차']
+cumulative_audience = [15, 42, 88, 150, 230, 340, 450]  # 단위: 만 명
+
+plt.figure(figsize=(10, 5))
+
+# 영역 차트 생성 (fill_between)
+plt.fill_between(dates, cumulative_audience, color="skyblue", alpha=0.4)
+plt.plot(dates, cumulative_audience, color="Slateblue", alpha=0.7, linewidth=2, marker='o')
+
+plt.title('기준일자별 누적관객수 변화', fontsize=14, fontweight='bold')
+plt.xlabel('기준일자')
+plt.ylabel('누적관객수 (만 명)')
+plt.grid(True, linestyle='--', alpha=0.5)
+
+plt.show()
