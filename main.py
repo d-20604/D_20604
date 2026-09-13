@@ -9,7 +9,6 @@ st.title("🎬 영화 박스오피스 데이터 분석")
 
 # [1. 데이터 불러오기 및 2. 날짜 전처리]
 # @st.cache_data를 사용하여 데이터 불러온 결과를 메모리에 저장(캐싱)
-# 웹앱이 새로고침되거나 다시 실행되어도 매번 데이터를 다운로드하지 않음
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/keep-growing-park/data-science/refs/heads/main/dataset/kobis_1year_boxoffice.csv"
@@ -49,8 +48,8 @@ selected_movie = st.sidebar.selectbox("분석할 영화를 선택하세요", mov
 filtered_df = df[df["영화명"] == selected_movie]
 
 # [5. 기타 - 구역 나누기]
-# 탭(Tab)을 생성하여 두 개의 그래프 구역 분리
-tab1, tab2 = st.tabs(["📈 일별 관객수 추이", "📊 누적 관객수 추이"])
+# 탭(Tab)을 생성하여 세 개의 그래프 구역 분리
+tab1, tab2, tab3 = st.tabs(["📈 일별 관객수 추이", "📊 누적 관객수 추이", "🏆 TOP 5 영화 비교"])
 
 # 첫 번째 구역: 일별 관객수 선그래프
 with tab1:
@@ -90,3 +89,36 @@ with tab2:
     
     # 그래프 하단 설명 문구 자리
     st.caption("💡 이 그래프로 알 수 있는 것: 시간이 흐름에 따른 관객수의 전체적인 누적 성장 곡선과 주요 관객 수 돌파 시점을 파악할 수 있습니다.")
+
+# 세 번째 구역: TOP 5 영화 누적 관객수 다중 선그래프
+with tab3:
+    st.subheader("🏆 누적 관객수 TOP 5 영화 추이 비교")
+    
+    # 누적 관객수의 최대값을 기준으로 가장 높은 상위 5개 영화명 추출
+    top5_movies = (
+        df.groupby("영화명")["누적관객수"]
+        .max()
+        .nlargest(5)
+        .index
+        .tolist()
+    )
+    
+    # 전체 데이터 중 상위 5개 영화에 해당하는 데이터만 필터링
+    top5_df = df[df["영화명"].isin(top5_movies)]
+    
+    # [다중 선그래프 그리기]
+    # color 옵션에 '영화명'을 지정하면 영화별로 서로 다른 색상과 범례가 자동으로 생성됩니다.
+    fig_multi = px.line(
+        top5_df,
+        x="기준일자",
+        y="누적관객수",
+        color="영화명",
+        title="누적 관객수 TOP 5 영화의 기준일자별 변화 비교",
+        labels={"기준일자": "날짜", "누적관객수": "누적 관객수 (명)", "영화명": "영화 제목"}
+    )
+    
+    # 화면에 Plotly 그래프 출력
+    st.plotly_chart(fig_multi, use_container_width=True)
+    
+    # 그래프 하단 설명 문구 자리
+    st.caption("💡 이 그래프로 알 수 있는 것: 박스오피스 상위 5개 흥행작들의 누적 관객수 증가 속도 및 시기별 관객 수 격차를 비교 분석할 수 있습니다.")
