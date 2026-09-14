@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 # 웹앱 기본 설정 (페이지 제목 및 레이아웃 넓게)
 st.set_page_config(page_title="영화 박스오피스 분석", layout="wide")
@@ -48,8 +49,13 @@ selected_movie = st.sidebar.selectbox("분석할 영화를 선택하세요", mov
 filtered_df = df[df["영화명"] == selected_movie]
 
 # [5. 기타 - 구역 나누기]
-# 탭(Tab)을 생성하여 세 개의 그래프 구역 분리
-tab1, tab2, tab3 = st.tabs(["📈 일별 관객수 추이", "📊 누적 관객수 추이", "🏆 장기 흥행 TOP 5 영화 비교"])
+# 탭(Tab)을 생성하여 네 개의 그래프 구역 분리
+tab1, tab2, tab3, tab4 = st.tabs([
+    "📈 일별 관객수 추이", 
+    "📊 누적 관객수 추이", 
+    "🏆 장기 흥행 TOP 5 영화 비교", 
+    "🌊 전체 관객수 이동평균"
+])
 
 # 첫 번째 구역: 일별 관객수 선그래프
 with tab1:
@@ -114,7 +120,6 @@ with tab3:
     top5_df = df[df["영화명"].isin(top5_long_run_movies)]
     
     # [다중 선그래프 그리기]
-    # color 옵션에 '영화명'을 지정하여 영화별 색상 구분 및 범례 자동 생성
     fig_multi = px.line(
         top5_df,
         x="기준일자",
@@ -129,3 +134,49 @@ with tab3:
     
     # 그래프 하단 설명 문구 자리
     st.caption("💡 이 그래프로 알 수 있는 것: TOP10 차트에 20일 이상 장기 잔류한 대표 흥행작 5편의 누적 관객수 성장 추이와 상호 성과 비교를 확인할 수 있습니다.")
+
+# 네 번째 구역: 전체 영화 일별 관객수 합계 및 7일 이동평균 그래프
+with tab4:
+    st.subheader("🌊 전체 박스오피스 일별 관객수 및 7일 이동평균 추이")
+    
+    # 1. 기준일자별 TOP10 전체 영화의 해당일관객수 합계 구하기
+    daily_total = df.groupby("기준일자")["해당일관객수"].sum().reset_index()
+    
+    # 2. 7일 이동평균 계산 (rolling 함수 활용)
+    daily_total["7일_이동평균"] = daily_total["해당일관객수"].rolling(window=7).mean()
+    
+    # 3. 이동평균 그래프 그리기 (go.Figure 사용)
+    fig_ma = go.Figure()
+    
+    # 원본 일별 관객수 합계 선 (연한 색상)
+    fig_ma.add_trace(go.Scatter(
+        x=daily_total["기준일자"],
+        y=daily_total["해당일관객수"],
+        mode="lines",
+        name="일별 관객수 합계",
+        line=dict(color="lightblue", width=1.5),
+        opacity=0.6
+    ))
+    
+    # 7일 이동평균 선 (진한 색상)
+    fig_ma.add_trace(go.Scatter(
+        x=daily_total["기준일자"],
+        y=daily_total["7일_이동평균"],
+        mode="lines",
+        name="7일 이동평균",
+        line=dict(color="royalblue", width=3)
+    ))
+    
+    # 그래프 레이아웃 설정
+    fig_ma.update_layout(
+        title="전체 영화 관객수 합계 및 7일 이동평균 추이",
+        xaxis_title="날짜",
+        yaxis_title="관객수 (명)",
+        hovermode="x unified"
+    )
+    
+    # 화면에 Plotly 그래프 출력
+    st.plotly_chart(fig_ma, use_container_width=True)
+    
+    # 그래프 하단 설명 문구 자리
+    st.caption("💡 이 그래프로 알 수 있는 것: 주말과 평일 사이의 단기 관객수 변동을 보정하여 극장가 전체 관객 흐름의 전반적인 상승·하락 트렌드를 파악할 수 있습니다.")
