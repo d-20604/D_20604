@@ -42,9 +42,7 @@ st.sidebar.header("🔍 검색 및 필터")
 # [3. 영화 선택 기능]
 # "영화명" 컬럼에서 중복을 제거한 영화 이름 목록을 준비합니다.
 # 영화별 총 누적관객수를 구하기 위해 그룹화한 뒤, 관객수 합계가 큰 순서(내림차순)로 정렬합니다.
-movie_total_audience = (
-    df.groupby("영화명")["누적관객수"].max().reset_index()
-)  # 영화별 최종 누적관객수 기준
+movie_total_audience = df.groupby("영화명")["누적관객수"].max().reset_index()
 sorted_movies_df = movie_total_audience.sort_values(
     by="누적관객수", ascending=False
 )
@@ -59,7 +57,7 @@ selected_movie = st.sidebar.selectbox(
 # --- [메인 화면 구성] ---
 st.title("🎬 영화 관객수 분석 대시보드")
 st.markdown(
-    f"현재 선택된 영화: **{selected_movie}**의 관객수 추이를 분석합니다."
+    f"현재 선택된 개별 영화: **{selected_movie}** / 전체 박스오피스 종합 분석"
 )
 
 
@@ -101,7 +99,6 @@ st.markdown("---")  # 구역을 나누는 수평선
 st.subheader("📊 누적관객수 추이")
 
 # [영역차트 그리기]
-# Plotly area chart를 이용해 누적관객수의 변화를 면적으로 시각화합니다.
 fig_area = px.area(
     movie_df,
     x="기준일자",
@@ -118,4 +115,37 @@ st.info(
     f"💡 **이 그래프로 알 수 있는 것:** '{selected_movie}'가 상영되는 동안"
     " 관객이 꾸준히 누적되어 최종 흥행 규모가 완성되는 과정을 완만한 곡선"
     " 형태로 확인할 수 있습니다."
+)
+
+
+# ==========================================
+# [세 번째 구역: Top 5 영화 다중 선그래프]
+# ==========================================
+st.markdown("---")  # 구역을 나누는 수평선
+st.subheader("🏆 누적관객수 기준 Top 5 영화 비교")
+
+# 1. 누적관객수가 가장 높은 상위 5개 영화 이름 추출
+top_5_movies = sorted_movies_df.head(5)["영화명"].tolist()
+
+# 2. 전체 데이터에서 Top 5 영화에 해당하는 데이터만 필터링
+top_5_df = df[df["영화명"].isin(top_5_movies)]
+
+# 3. Plotly 다중 선그래프 그리기 (color="영화명"을 통해 영화별 다른 색상 및 범례 생성)
+fig_multi_line = px.line(
+    top_5_df,
+    x="기준일자",
+    y="누적관객수",
+    color="영화명",  # 영화별로 선 색상을 다르게 지정하고 범례 자동 생성
+    title="박스오피스 Top 5 영화 누적관객수 비교",
+    labels={"기준일자": "날짜", "누적관객수": "누적 관객수", "영화명": "영화 제목"},
+)
+
+# 웹앱 화면에 다중 선그래프 출력
+st.plotly_chart(fig_multi_line, use_container_width=True)
+
+# [세 번째 그래프 해석 문구 자리]
+st.info(
+    "💡 **이 그래프로 알 수 있는 것:** 박스오피스 상위 5개 영화들의 흥행 속도(기울기)"
+    "와 최종 관객 규모를 한눈에 비교할 수 있으며, 어떤 영화가 가파른 상승세를"
+    " 보였는지 파악할 수 있습니다."
 )
