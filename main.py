@@ -81,10 +81,9 @@ fig_line = px.line(
     markers=True,  # 데이터 포인트마다 점 표시
 )
 
-# 웹앱 화면에 선 그래프 출력
 st.plotly_chart(fig_line, use_container_width=True)
 
-# [5. 기타: 첫 번째 그래프 해석 문구 자리]
+# [첫 번째 그래프 해석 문구 자리]
 st.info(
     f"💡 **이 그래프로 알 수 있는 것:** '{selected_movie}'의 상영 기간 중 관객수가"
     " 가장 높았던 특정 날짜나 주말 효과, 흥행 추이의 급증/급감 시점을 한눈에"
@@ -107,7 +106,6 @@ fig_area = px.area(
     labels={"기준일자": "날짜", "누적관객수": "누적 관객수"},
 )
 
-# 웹앱 화면에 영역 차트 출력
 st.plotly_chart(fig_area, use_container_width=True)
 
 # [두 번째 그래프 해석 문구 자리]
@@ -124,21 +122,17 @@ st.info(
 st.markdown("---")  # 구역을 나누는 수평선
 st.subheader("🏆 장기 흥행(20일 이상 등장) Top 5 영화 비교")
 
-# 1. 영화별로 등장한 일수와 최대 누적관객수 계산
 movie_stats = (
     df.groupby("영화명")
     .agg(appear_days=("기준일자", "count"), max_audience=("누적관객수", "max"))
     .reset_index()
 )
-
-# 2. 등장일수가 20일 이상인 영화만 필터링 후 Top 5 선정
 filtered_movies = movie_stats[movie_stats["appear_days"] >= 20]
 top_5_filtered = filtered_movies.sort_values(
     by="max_audience", ascending=False
 ).head(5)
 top_5_movie_names = top_5_filtered["영화명"].tolist()
 
-# 3. Top 5 영화 데이터 추출 및 다중 선그래프 그리기
 top_5_df = df[df["영화명"].isin(top_5_movie_names)]
 fig_multi_line = px.line(
     top_5_df,
@@ -165,17 +159,13 @@ st.info(
 st.markdown("---")  # 구역을 나누는 수평선
 st.subheader("📉 전체 박스오피스 일별 관객수 및 7일 이동평균")
 
-# 1. 기준일자별로 TOP10 영화 전체의 해당일관객수를 합산
 daily_total_df = (
     df.groupby("기준일자")["해당일관객수"].sum().reset_index()
 )
-
-# 2. 7일 이동평균(Moving Average) 값 계산
 daily_total_df["7일이동평균"] = (
     daily_total_df["해당일관객수"].rolling(window=7).mean()
 )
 
-# 3. Plotly로 원본 선(연하게)과 이동평균 선(진하게) 함께 그리기
 fig_ma = px.line(
     daily_total_df,
     x="기준일자",
@@ -183,7 +173,6 @@ fig_ma = px.line(
     title="전체 박스오피스 일별 관객수 총합 및 7일 이동평균 추이",
     labels={"기준일자": "날짜", "value": "관객수", "variable": "지표 구분"},
 )
-
 fig_ma.update_traces(selector=dict(name="해당일관객수"), opacity=0.3)
 fig_ma.update_traces(selector=dict(name="7일이동평균"), line=dict(width=3))
 
@@ -203,23 +192,18 @@ st.info(
 st.markdown("---")  # 구역을 나누는 수평선
 st.subheader("📊 월별 박스오피스 총 관객수 비교")
 
-# 1. 네 번째 그래프에서 만든 일별 합계 데이터(daily_total_df)를 활용
-# '기준일자'에서 연-월(YYYY-MM) 문자열을 추출하는 새로운 컬럼 생성
 daily_total_df["연월"] = daily_total_df["기준일자"].dt.strftime("%Y-%m")
-
-# 2. 연-월 기준으로 해당일관객수 합산
 monthly_total_df = (
     daily_total_df.groupby("연월")["해당일관객수"].sum().reset_index()
 )
 
-# 3. Plotly를 이용해 월별 막대그래프(Bar Chart) 그리기
 fig_bar = px.bar(
     monthly_total_df,
     x="연월",
     y="해당일관객수",
     title="월별 전체 박스오피스 관객수 합계",
     labels={"연월": "월 (Year-Month)", "해당일관객수": "총 관객수"},
-    text_auto=".2s",  # 막대 위에 수치 표시 (간략한 형식)
+    text_auto=".2s",
 )
 
 st.plotly_chart(fig_bar, use_container_width=True)
@@ -229,4 +213,102 @@ st.info(
     "💡 **이 그래프로 알 수 있는 것:** 월 단위로 극장가 전체의 관객 수요와"
     " 흥행 규모를 거시적으로 비교할 수 있으며, 성수기(방학 시즌, 명절 등)와"
     " 비수기 시즌의 극장가 활성도를 한눈에 파악할 수 있습니다."
+)
+
+
+# ==========================================
+# [여섯 번째 구역: 요일별·주차별 캘린더 히트맵]
+# ==========================================
+st.markdown("---")  # 구역을 나누는 수평선
+st.subheader("📅 요일별·주차별 관객수 히트맵")
+
+# 1. 원본 데이터에서 날짜별 일관객 합계 데이터 준비 (Top10 기준일자별 합산 데이터 활용 또는 전체 원본 기준)
+# 여기서는 날짜별 정확한 yyyy-mm-dd와 요일을 매칭하기 위해 일별 합산 데이터를 사용합니다.
+heatmap_df = daily_total_df.copy()
+
+# 2. 연-월, 요일, 주차(월 내 주차) 컬럼 생성
+heatmap_df["연월"] = heatmap_df["기준일자"].dt.strftime("%Y-%m")
+heatmap_df["요일"] = heatmap_df["기준일자"].dt.day_name()
+
+# 월 내 주차 계산 (해당 일의 날짜 - 1을 7로 나눈 몫 + 1)
+heatmap_df["주차"] = (
+    (heatmap_df["기준일자"].dt.day - 1) // 7 + 1
+).astype(str) + "주차"
+heatmap_df["월_주차"] = heatmap_df["연월"] + " (" + heatmap_df["주차"] + ")"
+
+# 3. 요일 순서를 월요일부터 일요일 순으로 정렬하기 위한 카테고리 지정
+days_order = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+days_kr = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+
+heatmap_df["요일_영문"] = pd.Categorical(
+    heatmap_df["요일"], categories=days_order, ordered=True
+)
+
+# 요일을 한글 이름으로 매핑 (선택사항이나 보기에 편하도록 변환)
+day_mapping = {
+    "Monday": "월요일",
+    "Tuesday": "화요일",
+    "Wednesday": "수요일",
+    "Thursday": "목요일",
+    "Friday": "금요일",
+    "Saturday": "토요일",
+    "Sunday": "일요일",
+}
+heatmap_df["요일명"] = heatmap_df["요일"].map(day_mapping)
+heatmap_df["요일명"] = pd.Categorical(
+    heatmap_df["요일명"], categories=days_kr, ordered=True
+)
+
+# 4. 피벗 테이블 형태로 변환 (Y축: 월_주차, X축: 요일명, 값: 해당일관객수, 날짜 정보 유지를 위해 집계 시 날짜는 첫번째 값 유지 등 처리)
+# 히트맵 셀에 마우스를 올렸을 때 정확한 yyyy-mm-dd를 보여주기 위해 pivot_table 구성
+pivot_df = heatmap_df.pivot_table(
+    index="월_주차",
+    columns="요일명",
+    values="해당일관객수",
+    aggfunc="sum",
+    observed=False,
+)
+pivot_date = heatmap_df.pivot_table(
+    index="월_주차",
+    columns="요일명",
+    values="기준일자",
+    aggfunc=lambda x: x.dt.strftime("%Y-%m-%d").iloc[0] if len(x) > 0 else "",
+    observed=False,
+)
+
+# 5. Plotly imshow를 이용한 히트맵 생성
+# 색이 진할수록 관객이 많도록 color_continuous_scale 적용
+fig_heatmap = px.imshow(
+    pivot_df,
+    labels=dict(x="요일", y="월 및 주차", color="관객수"),
+    x=days_kr,
+    y=pivot_df.index,
+    color_continuous_scale="Blues",
+    aspect="auto",
+)
+
+# 마우스 호버 시 yyyy-mm-dd 날짜가 보이도록 커스텀 텍스트(호버템플릿) 설정
+# z값(관객수)과 날짜 정보를 함께 표시합니다.
+fig_heatmap.update_traces(
+    hovertemplate=(
+        "날짜: %{customdata}<br>요일: %{x}<br>관객수: %{z:,}명<extra></extra>"
+    ),
+    customdata=pivot_date.values,
+)
+
+st.plotly_chart(fig_heatmap, use_container_width=True)
+
+# [여섯 번째 그래프 해석 문구 자리]
+st.info(
+    "💡 **이 그래프로 알 수 있는 것:** 월별 주차와 요일에 따른 관객 집중도를"
+    " 히트맵 색상의 진한 정도를 통해 한눈에 파악할 수 있으며, 주말(토, 일요일)"
+    "이나 특정 요일에 관객이 얼마나 몰리는지 시각적으로 확인할 수 있습니다."
 )
