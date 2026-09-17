@@ -1,34 +1,36 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-import streamlit as st  # Streamlit 환경 기준 (필요시 사용)
+import streamlit as st
 
-# -------------------------------------------------------------
-# [참고] 네 번째 그래프에서 만들어진 df_daily 데이터가 있다고 가정합니다.
-# 만약 '기준일자'가 인덱스로 잡혀있거나 컬럼으로 내려와 있는 상황을 모두 고려한 안전한 코드입니다.
-# -------------------------------------------------------------
+# 1. df_daily가 Series 형태라면 DataFrame으로 안전하게 변환
+if isinstance(df_daily, pd.Series):
+  df_daily = df_daily.reset_index()
 
-# 1. 인덱스에 '기준일자'가 숨어있을 경우를 대비해 reset_index 실행
+# 2. DataFrame이 되었는데 '기준일자'가 컬럼에 없다면 인덱스 리셋 시도
 if '기준일자' not in df_daily.columns:
   df_daily = df_daily.reset_index()
 
-# 2. 기준일자를 datetime 형식으로 변환 후 연-월(YYYY-MM) 단위 추출
+# 3. 기준일자를 datetime 형식으로 변환 후 연-월(YYYY-MM) 단위 추출
 df_daily['기준일자'] = pd.to_datetime(df_daily['기준일자'])
 df_daily['연월'] = df_daily['기준일자'].dt.to_period('M')
 
-# 3. 월별로 관객수 합산 (실제 컬럼명 '전체관객수' 또는 '관객수'에 맞게 수정 필요)
-# 데이터프레임의 관객수 컬럼명에 맞춰 대괄호 안을 수정해 주세요 (예: '관객수')
-target_col = (
-    '전체관객수' if '전체관객수' in df_daily.columns else '관객수'
-)
-df_monthly = (
-    df_daily.groupby('연월')[target_col].sum().reset_index()
-)
-df_monthly['연월'] = df_monthly['연월'].astype(
-    str
-)  # 그래프 X축 출력을 위해 문자열 변환
+# 4. 관객수 관련 컬럼 자동 탐지 (전체관객수, 관객수 등)
+target_col = None
+for col in ['전체관객수', '관객수', '합계']:
+  if col in df_daily.columns:
+    target_col = col
+    break
+if target_col is None:
+  # 컬럼명을 못 찾으면 숫자형 데이터를 가진 첫 번째 컬럼 선택
+  numeric_cols = df_daily.select_dtypes(include='number').columns
+  target_col = numeric_cols[0] if len(numeric_cols) > 0 else df_daily.columns[-1]
+
+# 5. 월별로 관객수 합산
+df_monthly = df_daily.groupby('연월')[target_col].sum().reset_index()
+df_monthly['연월'] = df_monthly['연월'].astype(str)  # 그래프 X축 출력을 위해 문자열 변환
 
 # -------------------------------------------------------------
-# 4. 다섯 번째 그래프 시각화 (Matplotlib)
+# 6. 다섯 번째 그래프 시각화 (Matplotlib)
 # -------------------------------------------------------------
 fig, ax = plt.subplots(figsize=(12, 6))
 ax.bar(
@@ -47,12 +49,11 @@ plt.xticks(rotation=45)
 ax.grid(axis='y', linestyle='--', alpha=0.7)
 plt.tight_layout()
 
-# Streamlit 환경에서 그래프 출력할 때 (일반 스크립트라면 plt.show() 사용)
+# Streamlit 환경에서 그래프 출력
 st.pyplot(fig)
-# plt.show() # 스크립트 직접 실행인 경우 이 줄 사용
 
 # -------------------------------------------------------------
-# 5. 그래프 아래에 '이 그래프로 알 수 있는 것' 추가 (Streamlit 기준 텍스트)
+# 7. 그래프 아래에 '이 그래프로 알 수 있는 것' 추가
 # -------------------------------------------------------------
 st.markdown('### 💡 이 그래프로 알 수 있는 것')
 st.markdown(
