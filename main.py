@@ -184,13 +184,8 @@ fig_ma = px.line(
     labels={"기준일자": "날짜", "value": "관객수", "variable": "지표 구분"},
 )
 
-# 원본 선(해당일관객수)은 투명도를 주어 연하게, 이동평균선은 진하게 스타일 조정
-fig_ma.update_traces(
-    selector=dict(name="해당일관객수"), opacity=0.3
-)  # 원본 선 연하게
-fig_ma.update_traces(
-    selector=dict(name="7일이동평균"), line=dict(width=3)
-)  # 이동평균선 진하게
+fig_ma.update_traces(selector=dict(name="해당일관객수"), opacity=0.3)
+fig_ma.update_traces(selector=dict(name="7일이동평균"), line=dict(width=3))
 
 st.plotly_chart(fig_ma, use_container_width=True)
 
@@ -199,4 +194,39 @@ st.info(
     "💡 **이 그래프로 알 수 있는 것:** 요일별 변동(주말 효과 등)이 심한 일별"
     " 관객수 원본 데이터 속에서, 7일 이동평균선을 통해 전체 극장가의 전반적인"
     " 관객 수요 흐름과 추세(상승세 및 하락세)를 매끄럽게 파악할 수 있습니다."
+)
+
+
+# ==========================================
+# [다섯 번째 구역: 월별 전체 관객수 합계 막대그래프]
+# ==========================================
+st.markdown("---")  # 구역을 나누는 수평선
+st.subheader("📊 월별 박스오피스 총 관객수 비교")
+
+# 1. 네 번째 그래프에서 만든 일별 합계 데이터(daily_total_df)를 활용
+# '기준일자'에서 연-월(YYYY-MM) 문자열을 추출하는 새로운 컬럼 생성
+daily_total_df["연월"] = daily_total_df["기준일자"].dt.strftime("%Y-%m")
+
+# 2. 연-월 기준으로 해당일관객수 합산
+monthly_total_df = (
+    daily_total_df.groupby("연월")["해당일관객수"].sum().reset_index()
+)
+
+# 3. Plotly를 이용해 월별 막대그래프(Bar Chart) 그리기
+fig_bar = px.bar(
+    monthly_total_df,
+    x="연월",
+    y="해당일관객수",
+    title="월별 전체 박스오피스 관객수 합계",
+    labels={"연월": "월 (Year-Month)", "해당일관객수": "총 관객수"},
+    text_auto=".2s",  # 막대 위에 수치 표시 (간략한 형식)
+)
+
+st.plotly_chart(fig_bar, use_container_width=True)
+
+# [다섯 번째 그래프 해석 문구 자리]
+st.info(
+    "💡 **이 그래프로 알 수 있는 것:** 월 단위로 극장가 전체의 관객 수요와"
+    " 흥행 규모를 거시적으로 비교할 수 있으며, 성수기(방학 시즌, 명절 등)와"
+    " 비수기 시즌의 극장가 활성도를 한눈에 파악할 수 있습니다."
 )
