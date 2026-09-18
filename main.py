@@ -27,7 +27,7 @@ def load_data():
 df = load_data()
 
 # -------------------------------------------------------------------
-# 그래프 1: 장르별 영화 편수 (분포)
+# 그래프 1: 장르별 영화 편수 (도넛 그래프)
 # -------------------------------------------------------------------
 st.subheader("1. 장르별 영화 편수 분포")
 
@@ -58,27 +58,26 @@ st.write(
 st.divider()
 
 # -------------------------------------------------------------------
-# 그래프 2: 개봉 첫 주 관객수와 총 관객수 (관계)
+# 그래프 2: 장르 및 영화별 총 관객수 (트리맵)
 # -------------------------------------------------------------------
-st.subheader("2. 개봉 첫 주 관객수와 총 관객수의 관계")
+st.subheader("2. 장르별 영화 관객수 트리맵")
 
-fig_scatter = px.scatter(
+fig_treemap = px.treemap(
     df,
-    x="first_week_audi",
-    y="total_audi",
+    path=[px.Constant("전체 영화"), "genre", "movieNm"],
+    values="total_audi",
     color="genre",
-    hover_name="movieNm",
-    labels={
-        "first_week_audi": "개봉 첫 주 관객수",
-        "total_audi": "총 관객수",
-        "genre": "장르",
-    },
-    title="개봉 첫 주 관객수 vs 총 관객수 상관관계",
+    title="장르 및 영화별 총 관객수(total_audi) 분포",
 )
 
-st.plotly_chart(fig_scatter, use_container_width=True)
+# 칸에 마우스를 올리면 영화명(label)과 총 관객(value) 표기
+fig_treemap.update_traces(
+    hovertemplate="<b>%{label}</b><br>총 관객수: %{value:,.0f}명<extra></extra>"
+)
+
+st.plotly_chart(fig_treemap, use_container_width=True)
 
 st.markdown("> **💡 이 그래프로 알 수 있는 것**")
 st.write(
-    "개봉 첫 주 관객수가 많은 영화일수록 최종 총 관객수도 높게 나타나는 강한 양의 상관관계가 있음을 알 수 있습니다."
+    "장르 전체의 총 관객 규모뿐만 아니라 각 장르 내에서 어떤 영화가 관객수를 독점하거나 크게 기여했는지 개별 영화별 비중을 직관적으로 비교할 수 있습니다."
 )
