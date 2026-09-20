@@ -99,3 +99,36 @@ st.info(
 )
 
 st.divider()
+
+# ──────────────────────────────────────────
+# 그래프 4. 개봉일 스크린수와 총 관객 수 산점도
+# ──────────────────────────────────────────
+st.header("4. 개봉일 스크린수와 총 관객 수의 관계 (산점도)")
+st.markdown("개봉일 스크린수(`first_scrn`)가 총 관객수(`total_audi`)에 미치는 영향을 장르별 색상으로 구분하여 살펴봅니다.")
+
+fig4 = px.scatter(
+    df,
+    x="first_scrn",
+    y="total_audi",
+    color="장르",
+    hover_name="movieNm",
+    labels={"first_scrn": "개봉일 스크린수", "total_audi": "총 관객수"},
+    custom_data=["movieNm", "first_scrn", "total_audi"]
+)
+
+fig4.update_traces(
+    hovertemplate="<b>영화명:</b> %{customdata[0]}<br>개봉일 스크린수: %{customdata[1]:,}개<br>총 관객수: %{customdata[2]:,}명<extra></extra>"
+)
+
+fig4.update_layout(
+    xaxis_title="개봉일 스크린수",
+    yaxis_title="총 관객수",
+    height=600
+)
+
+st.plotly_chart(fig4, use_container_width=True)
+
+st.markdown("### 💡 이 그래프로 알 수 있는 것")
+st.info("일반적으로 개봉일 스크린수가 많을수록 총 관객 수도 비례해서 증가하는 경향을 보이며, 장르별로 스크린 확보 규모와 흥행 효율성을 비교할 수 있습니다.")
+
+st.divider()
