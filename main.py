@@ -86,7 +86,6 @@ fig3.update_traces(
 fig3.update_layout(xaxis_title="총 관객 수", yaxis_title="영화 편수 (편)")
 st.plotly_chart(fig3, use_container_width=True)
 
-# 데이터 계산 (가장 관객이 많은 영화)
 max_movie_row = df.loc[df["total_audi"].idxmax()]
 max_movie_name = max_movie_row["movieNm"]
 max_movie_audi = max_movie_row["total_audi"]
@@ -139,7 +138,6 @@ st.divider()
 st.header("5. 주요 장르별 총 관객 수 분포 (박스플롯)")
 st.markdown("영화 편수가 10편 이상인 주요 장르들을 대상으로 총 관객 수의 분포와 이상치(흥행 대작)를 살펴봅니다.")
 
-# 10편 이상인 장르 필터링
 genre_counts_s5 = df["장르"].value_counts()
 valid_genres = genre_counts_s5[genre_counts_s5 >= 10].index
 df_filtered = df[df["장르"].isin(valid_genres)]
@@ -169,5 +167,39 @@ st.plotly_chart(fig5, use_container_width=True)
 
 st.markdown("### 💡 이 그래프로 알 수 있는 것")
 st.info("장르별 전체 관객 수의 중앙값과 분포 편차를 비교할 수 있으며, 박스 바깥으로 튀어나온 이상치 점들을 통해 각 장르 내에서 유독 대성공을 거둔 블록버스터 영화가 무엇인지 확인할 수 있습니다.")
+
+st.divider()
+
+# ──────────────────────────────────────────
+# 그래프 6. 개봉일 스크린수와 총 관객 수 버블 그래프
+# ──────────────────────────────────────────
+st.header("6. 스크린수·총 관객수·첫 주 관객수 관계 (버블 그래프)")
+st.markdown("산점도에 **첫 주 관객수(`first_week_audi`)** 크기를 반영한 버블을 적용하여, 초기 화력과 최종 흥행의 관계를 입체적으로 살펴봅니다.")
+
+fig6 = px.scatter(
+    df,
+    x="first_scrn",
+    y="total_audi",
+    size="first_week_audi",
+    color="장르",
+    hover_name="movieNm",
+    labels={"first_scrn": "개봉일 스크린수", "total_audi": "총 관객수", "first_week_audi": "첫 주 관객수"},
+    custom_data=["movieNm", "first_scrn", "total_audi", "first_week_audi"]
+)
+
+fig6.update_traces(
+    hovertemplate="<b>영화명:</b> %{customdata[0]}<br>개봉일 스크린수: %{customdata[1]:,}개<br>총 관객수: %{customdata[2]:,}명<br>첫 주 관객수: %{customdata[3]:,}명<extra></extra>"
+)
+
+fig6.update_layout(
+    xaxis_title="개봉일 스크린수",
+    yaxis_title="총 관객수",
+    height=600
+)
+
+st.plotly_chart(fig6, use_container_width=True)
+
+st.markdown("### 💡 이 그래프로 알 수 있는 것")
+st.info("버블의 크기(첫 주 관객수)를 통해 개봉 초기 화력이 거세었던 영화가 최종 총 관객수와 스크린수 규모에 어떤 영향을 미치는지 다차원적으로 파악할 수 있습니다.")
 
 st.divider()
