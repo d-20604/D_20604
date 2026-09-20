@@ -203,3 +203,32 @@ st.markdown("### 💡 이 그래프로 알 수 있는 것")
 st.info("버블의 크기(첫 주 관객수)를 통해 개봉 초기 화력이 거세었던 영화가 최종 총 관객수와 스크린수 규모에 어떤 영향을 미치는지 다차원적으로 파악할 수 있습니다.")
 
 st.divider()
+
+# ──────────────────────────────────────────
+# 그래프 7. 제작 국가-장르 계층 선버스트 그래프
+# ──────────────────────────────────────────
+st.header("7. 제작 국가 및 장르별 영화 편수 (선버스트)")
+st.markdown("안쪽 원의 **제작 국가(`nation`)**에서 바깥쪽 원의 **장르(`장르`)**로 이어지는 계층 구조를 통해, 국가별 주력 장르와 영화 편수를 원형 비중으로 살펴봅니다.")
+
+fig7 = px.sunburst(
+    df,
+    path=["nation", "장르"],
+    color="nation",
+    color_discrete_sequence=px.colors.qualitative.Pastel
+)
+
+fig7.update_traces(
+    hovertemplate="<b>분류:</b> %{label}<br><b>영화 편수:</b> %{value}편<extra></extra>"
+)
+
+fig7.update_layout(
+    margin=dict(t=10, b=10, l=10, r=10),
+    height=600
+)
+
+st.plotly_chart(fig7, use_container_width=True)
+
+st.markdown("### 💡 이 그래프로 알 수 있는 것")
+st.info("각 제작 국가(한국, 외국 등)에서 박스오피스 상위권에 진입한 영화들이 주로 어떤 장르에 집중되어 있는지 전체적인 구성 비율과 편수를 직관적으로 파악할 수 있습니다.")
+
+st.divider()
