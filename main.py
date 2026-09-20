@@ -232,3 +232,37 @@ st.markdown("### 💡 이 그래프로 알 수 있는 것")
 st.info("각 제작 국가(한국, 외국 등)에서 박스오피스 상위권에 진입한 영화들이 주로 어떤 장르에 집중되어 있는지 전체적인 구성 비율과 편수를 직관적으로 파악할 수 있습니다.")
 
 st.divider()
+
+# ──────────────────────────────────────────
+# 그래프 8. 제작 국가별 영화 편수 비율 파이 그래프
+# ──────────────────────────────────────────
+st.header("8. 제작 국가별 영화 편수 비율 (파이)")
+st.markdown("제작 국가(`nation`)별 전체 영화 편수의 점유율과 비율을 파이 차트로 살펴봅니다.")
+
+nation_count = df["nation"].value_counts().reset_index()
+nation_count.columns = ["nation", "편수"]
+
+fig8 = px.pie(
+    nation_count,
+    names="nation",
+    values="편수",
+    color_discrete_sequence=px.colors.qualitative.Set2
+)
+
+fig8.update_traces(
+    textposition="inside",
+    textinfo="percent+label",
+    hovertemplate="<b>제작 국가:</b> %{label}<br><b>영화 편수:</b> %{value}편<br><b>비율:</b> %{percent}<extra></extra>"
+)
+
+fig8.update_layout(
+    margin=dict(t=30, b=30, l=30, r=30),
+    height=500
+)
+
+st.plotly_chart(fig8, use_container_width=True)
+
+st.markdown("### 💡 이 그래프로 알 수 있는 것")
+st.info("박스오피스 10위권에 오른 전체 영화 중 국내 영화와 해외(외국) 영화 간의 제작 편수 비율과 점유 차이를 명확하게 확인할 수 있습니다.")
+
+st.divider()
